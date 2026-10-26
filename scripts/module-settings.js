@@ -1,3 +1,4 @@
+import { DEFAULT_EXCLUSIONS } from "./export-policy.js";
 import * as MOD_CONFIG from "./config.js"
 import { convertHtml } from './export-markdown.js';
 
@@ -6,6 +7,16 @@ import { convertHtml } from './export-markdown.js';
  */
 
 Hooks.once('ready', () => {
+    game.settings.register(MOD_CONFIG.MODULE_NAME, 'includeTokenImages', {
+        name: 'Include token images',
+        hint: 'Also download creature token artwork. Off by default: portraits are still included when Export custom images is enabled.',
+        scope: 'world', type: Boolean, default: false, config: true
+    });
+    game.settings.register(MOD_CONFIG.MODULE_NAME, 'excludedCompendiums', {
+        name: 'Excluded compendiums or folders',
+        hint: 'Comma-separated or newline-separated exact compendium titles, folder names, collection IDs, or package IDs to skip before loading. Clear this field to export everything.',
+        scope: 'world', type: String, default: DEFAULT_EXCLUSIONS, config: true
+    });
     game.settings.register(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_DUMP, {
 		name: "Format for non-decoded data",
 		hint: "For document types not otherwise decoded, use this format for the data dump.",
@@ -48,7 +59,7 @@ Hooks.once('ready', () => {
 
     game.settings.register(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_EXPORT_TOKENS, {
 		name: "Export custom images",
-		hint: "When checked, if any monster being exported contains a custom token reference, that image will also be included in the zip file. NOTE: this will NOT export system default tokens.",
+		hint: "Include creature portraits in the ZIP, including system icons and module artwork. Separate token artwork is downloaded only when Include token images is enabled.",
 		scope: "world",
 		type:  Boolean,
 		default: false,
@@ -140,6 +151,8 @@ Hooks.once('ready', () => {
         })
     }
     
+  Handlebars.registerHelper('me-isNumber', value => typeof value === 'number' && Number.isFinite(value));
+
   Handlebars.registerHelper('me-trait', function (value) {
     // Convert a sluggified trait into its localized human-readable text
     let lookUpText = CONFIG.PF2E.npcAttackTraits[value];

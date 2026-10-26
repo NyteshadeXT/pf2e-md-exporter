@@ -2,10 +2,10 @@
 // Foundry FilePicker dialog doesn't make files with those extensions pickable or uploadable
 
 // Global template cache
-let _templateCache = {};
+let _templateCache = Object.create(null);
 
 export function clearTemplateCache() {
-    _templateCache = {};
+    _templateCache = Object.create(null);
 }
 
 export async function myRenderTemplate(templatePath, data) {
@@ -18,9 +18,10 @@ export async function myRenderTemplate(templatePath, data) {
 
 
 async function myGetTemplate(templatePath) {
-    if ( !_templateCache.hasOwnProperty(templatePath) ) {
+    if ( !Object.hasOwn(_templateCache, templatePath) ) {
         //let files = FilePicker.browse(source, target, options);
-        const resp = await fetch(templatePath).catch(() => {});
+        const resp = await fetch(templatePath);
+        if (!resp.ok) throw new Error(`Template ${templatePath}: HTTP ${resp.status}`);
         if (resp) {
             const compiled = Handlebars.compile(await resp.text());
             //Handlebars.registerPartial(id ?? path, compiled);

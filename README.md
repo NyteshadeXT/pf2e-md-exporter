@@ -15,7 +15,7 @@ This process requires you have a Foundry account with a World with the **Pathfin
 ![Game System](Screenshots/GameSystem.png)
 
 ## 1. Install the following required modules:
-* **PF2E Exporter** (This is what you are reading right now. Use manifest `https://github.com/MostTornBrain/pf2e-md-exporter/releases/latest/download/module.json`)
+* **PF2E Exporter** (This is what you are reading right now. Use manifest `https://github.com/NyteshadeXT/pf2e-md-exporter/releases/latest/download/module.json`)
 * **More Handlebars Helpers**
 
 NOTE: You should be prompted to install the two extra required modules automatically when installing this module. 
@@ -32,7 +32,11 @@ Choose `Configure Settings` and pick PF2E Exporter.
 
 _NOTE:_ It is recommended to **NOT** use the UUID of each document as the note name as doing so will populate your vault with a lot of random file names.
 
-- If you own any custom modules that supply monster artwork and you want that artwork to be included, you must enable such modules in your world, and select the option to "Export custom images".
+- To include creature artwork, enable its supplying modules in your world and select **Export custom images**. Portraits are included, including paths under `systems/` and `icons/`. Separate token artwork is off by default; enable **Include token images** only if wanted. Statblocks use the portrait unless token images are included. Wildcard image paths require a concrete file and produce a warning when skipped.
+
+- **Excluded compendiums or folders** skips the utility, macro, effect and music groups listed in the setting before loading their documents or downloading their assets. Edit the comma/newline-separated exact titles or folder names to customize; clear the field to include all groups. Matching a folder also skips its nested compendiums. Creature-art modules remain enabled so they can supply portraits for retained Bestiary entries.
+
+- Images are saved under `zz_asset-files`. Forge and other web-hosted images use `zz_asset-files/remote/<host>/<path>`, and their Markdown links use the matching archive path. Assets that cannot be downloaded appear in `export-warnings.json`.
 
 - If you want to include markdown for the monsters for Obsidian's [Initiative Tracker](https://github.com/javalent/initiative-tracker) plugin, choose "Include Initiative Tracker markdown".
 
