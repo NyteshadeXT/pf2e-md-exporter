@@ -4,7 +4,7 @@
 export function formatFormula(doc, input) {
     const level = doc?.level ?? doc?.system?.level?.value;
     let formula = String(input).split('#')[0].split('|')[0].trim();
-    formula = formula.replace(/@item\.(?:level|rank)\b/g, () => level ?? '@item.level')
+    formula = formula.replace(/@item\.(?:level|rank)\b/g, reference => level ?? reference)
         .replace(/@item\.badge\.value\b/g, '1')
         .replace(/@actor\.level\b/g, '1');
     // Do not split on "d": it also occurs in unresolved references and words.
