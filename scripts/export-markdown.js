@@ -1,3 +1,4 @@
+import { AssetDownloads, withTimeout } from "./assets.js";
 import { formatFormula as doMath, orderedSounds } from "./export-utils.js";
 import { createArchiveBlob } from "./archive.js";
 import "./lib/jszip.min.js";
@@ -19,6 +20,8 @@ const SPECIAL_CONDITIONS = ["Clumsy", "Doomed", "Drained", "Dying", "Enfeebled",
 const destForImages = "zz_asset-files";
 
 let zip;
+let assets;
+let reportProgress = () => {};
 
 
 
@@ -92,10 +95,15 @@ function saveDataToFile(blob, filename) {
     let a = document.createElement('a');
     a.href = window.URL.createObjectURL(blob);
     a.download = filename;
+    document.body?.append(a);
 
     // Dispatch a click event to the element
     a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-    return new Promise(resolve => setTimeout(() => { window.URL.revokeObjectURL(a.href); resolve()}, 100));
+    a.remove?.();
+    // Give the browser time to consume large downloads before revoking the URL.
+    const cleanup = setTimeout(() => window.URL.revokeObjectURL(a.href), 60000);
+    cleanup.unref?.();
+    return Promise.resolve();
 }
 
 function folderpath(doc) {
@@ -121,22 +129,7 @@ function formatLink(link, label=null, inline=false) {
 function fileconvert(filename, label_or_size=null, inline=true) {
     filename = decodeURIComponent(filename);
 
-    zip.folder(destForImages).file(filename, 
-        // Provide a Promise which JSZIP will wait for before saving the file.
-        // (Note that a CORS request will fail at this point.)
-        fetch(filename).then(resp => {
-            if (resp.status !== 200) {
-                console.error(`Failed to fetch file from '${filename}' (response ${resp.status})`)
-                return new Blob();
-            } else {
-                console.debug(`Adding file ${filename}`);
-                return resp.blob();
-            }
-        }).catch(e => { 
-            console.log(e);
-            return new Blob();
-        }),
-    {binary:true});
+    zip.folder(destForImages).file(filename, assets.get(filename), {binary: true});
 
     return formatLink(filename, label_or_size, inline);
 }
@@ -855,22 +848,7 @@ async function convertHtmlAsync(doc, html) {
             const fullMatch = match[0];  // The full matched string, e.g., <div style="float:left"><div src="image1.png"
             const srcReference = match[1];  // The captured group, e.g., "image1.png"
 
-            zip.folder(destForImages).file(srcReference, 
-                // Provide a Promise which JSZIP will wait for before saving the file.
-                // (Note that a CORS request will fail at this point.)
-                fetch(srcReference).then(resp => {
-                    if (resp.status !== 200) {
-                        console.error(`ConvertHTML: Failed to fetch file from '${srcReference}' (response ${resp.status})`)
-                        return new Blob();
-                    } else {
-                        console.debug(`ConvertHTML: Adding file ${srcReference}`);
-                        return resp.blob();
-                    }
-                }).catch(e => { 
-                    console.log(e);
-                    return new Blob();
-                }),
-            {binary:true});
+            zip.folder(destForImages).file(srcReference, assets.get(srcReference), {binary:true});
         }
 
     } catch (error) {
@@ -919,22 +897,7 @@ export function convertHtml(doc, html) {
             const fullMatch = match[0];  // The full matched string, e.g., <div style="float:left"><div src="image1.png"
             const srcReference = match[1];  // The captured group, e.g., "image1.png"
 
-            zip.folder(destForImages).file(srcReference, 
-                // Provide a Promise which JSZIP will wait for before saving the file.
-                // (Note that a CORS request will fail at this point.)
-                fetch(srcReference).then(resp => {
-                    if (resp.status !== 200) {
-                        console.error(`ConvertHTML: Failed to fetch file from '${srcReference}' (response ${resp.status})`)
-                        return new Blob();
-                    } else {
-                        console.debug(`ConvertHTML: Adding file ${srcReference}`);
-                        return resp.blob();
-                    }
-                }).catch(e => { 
-                    console.log(e);
-                    return new Blob();
-                }),
-            {binary:true});
+            zip.folder(destForImages).file(srcReference, assets.get(srcReference), {binary:true});
         }
 
     } catch (error) {
@@ -1257,10 +1220,12 @@ async function oneFolder(path, folder) {
 
 async function onePack(path, pack) {
     let type = pack.metadata.type;
-    console.debug(`Collecting pack '${pack.title}'`)
+    reportProgress(`Loading compendium: ${pack.title}`, true);
     let subpath = formpath(path, validFilename(pack.title));
-    const documents = await pack.getDocuments();
+    const documents = await withTimeout(pack.getDocuments(), `Loading compendium ${pack.title}`);
+    let documentIndex = 0;
     for (const doc of documents) {
+        reportProgress(`Converting ${pack.title}: ${++documentIndex}/${documents.length} — ${doc.name}`);
         await oneDocument(subpath, doc);
     }
 }
@@ -1293,6 +1258,8 @@ export async function exportMarkdown(from, zipname) {
     } finally {
         exporting = false;
         zip = undefined;
+        assets = undefined;
+        reportProgress = () => {};
     }
 }
 
@@ -1306,7 +1273,15 @@ async function runExport(from, zipname) {
     include_initiative_tracker  = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_INCLUDE_INITIATIVE);
     export_traits               = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_EXPORT_TRAITS);
 
-    let noteid = ui.notifications.info(`${MODULE_NAME}.ProgressNotification`, {permanent: true, localize: true})
+    let noteid = ui.notifications.info('Preparing Markdown export', {permanent: true, progress: true});
+    let lastProgress = 0;
+    reportProgress = (message, force = false) => {
+        if (!force && Date.now() - lastProgress < 2000) return;
+        lastProgress = Date.now();
+        console.info(MODULE_NAME + ' | ' + message);
+        ui.notifications.update?.(noteid, {message});
+    };
+    assets = new AssetDownloads();
     try {
     // Wait for the notification to get drawn
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -1365,8 +1340,18 @@ async function runExport(from, zipname) {
     } else
         await oneDocument(TOP_PATH, from);
 
-    let blob = await createArchiveBlob(zip);
+    reportProgress('Downloading assets: ' + assets.completed + '/' + assets.cache.size, true);
+    assets.onProgress = state => reportProgress('Downloading assets: ' + state.completed + '/' + state.cache.size);
+    await assets.finish();
+    if (assets.failures.length) {
+        zip.file('export-warnings.json', JSON.stringify(assets.failures, null, 2));
+        ui.notifications.warn(assets.failures.length + ' assets could not be downloaded. See export-warnings.json in the ZIP.');
+    }
+    reportProgress('Creating ZIP: ' + Object.keys(zip.files).length + ' entries', true);
+    let blob = await createArchiveBlob(zip, metadata => reportProgress('Creating ZIP: ' + Math.floor(metadata.percent) + '% — ' + (metadata.currentFile ?? 'finishing')));
+    reportProgress('Starting download: ' + (blob.size / 1048576).toFixed(1) + ' MB', true);
     await saveDataToFile(blob, `${validFilename(zipname)}.zip`);
+    ui.notifications.info("ZIP download requested. Check your browser Downloads panel.");
     } finally {
     // ui.notifications.remove does not exist in Foundry V10
     ui.notifications.remove?.(noteid);

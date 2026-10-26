@@ -107,3 +107,24 @@ latest stable manifest (the PR has not been released). Start with one compendium
 then repeat the export that failed. Record whether a ZIP is downloaded, opens and
 contains the expected documents and assets. If browser allocation still fails,
 export smaller folders/compendiums and capture the new, original error details.
+
+## Follow-up log: export remains running without output
+
+The next log contains neither the Blob exception nor a final export failure.
+It ends with unresolved tags from macro source, without evidence that a download
+was requested. The precise blocking stage cannot be inferred from that capture.
+
+Exports now report compendium loading, document conversion, completed/total asset
+downloads, ZIP entry count and compression percentage, and download size to both
+the progress notification and console. Asset downloads use a six-request queue,
+deduplicate repeated URLs, and time out after 60 seconds including response-body
+reads. Missing assets are listed in export-warnings.json inside the archive, with
+a visible warning. Compendium reads time out after two minutes with the pack name.
+ZIP streams with no output for two minutes fail visibly. Download links are attached
+to the page, and Blob URLs are retained for 60 seconds to allow browser consumption.
+
+Retest a single compendium first, then the previous selection. If output is still
+absent, capture the last `pf2e-md-exporter |` progress message and check the browser's
+Downloads panel for a blocked download. These changes address unbounded asset waits
+and expose the blocking stage; they do not establish the cause of the captured stall
+or prove live Forge completion.
