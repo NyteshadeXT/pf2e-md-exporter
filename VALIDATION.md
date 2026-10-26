@@ -128,3 +128,18 @@ absent, capture the last `pf2e-md-exporter |` progress message and check the bro
 Downloads panel for a blocked download. These changes address unbounded asset waits
 and expose the blocking stage; they do not establish the cause of the captured stall
 or prove live Forge completion.
+
+## User-reported successful export and asset regression
+
+The user reports a successful ZIP download and a quick Markdown spot check with
+the files looking as expected. This is user-performed Forge validation, not an
+agent-operated live test; it does not establish full content or image correctness.
+The supplied export-warnings.json contains 409 failures, all reporting
+`Failed to execute 'fetch' on 'Window': Illegal invocation`.
+
+The asset queue stored the native fetch function and invoked it as a queue method,
+changing its receiver from Window to the queue. The default fetch callback now
+invokes globalThis.fetch on its owning global. A regression test requires that
+receiver and verifies downloaded bytes, covering the browser behavior missed by
+the earlier injected-fetch tests. Retest image inclusion with the next artifact;
+the previous successful archive contains placeholders for these failed assets.

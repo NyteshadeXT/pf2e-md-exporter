@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import { AssetDownloads, withTimeout } from '../scripts/assets.js';
 import { createArchiveBlob } from '../scripts/archive.js';
 
+test('default fetch preserves the browser global receiver', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async function () {
+        assert.equal(this, globalThis, 'browser fetch requires its Window receiver');
+        return {ok: true, arrayBuffer: async () => new Uint8Array([42]).buffer};
+    };
+    try {
+        const assets = new AssetDownloads();
+        assert.deepEqual(await assets.get('icons/example.webp'), new Uint8Array([42]));
+        assert.deepEqual(assets.failures, []);
+    } finally { globalThis.fetch = originalFetch; }
+});
+
 test('asset queue limits concurrency, deduplicates URLs and preserves bytes', async () => {
     let active = 0, max = 0, calls = 0;
     const assets = new AssetDownloads({concurrency: 2, fetcher: async () => {

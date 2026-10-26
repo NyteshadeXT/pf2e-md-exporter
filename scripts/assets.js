@@ -1,6 +1,6 @@
 /** Limit concurrent downloads, reuse repeated URLs, and bound both headers and body waits. */
 export class AssetDownloads {
-    constructor({ concurrency = 6, timeoutMs = 60000, fetcher = globalThis.fetch, onProgress = () => {} } = {}) {
+    constructor({ concurrency = 6, timeoutMs = 60000, fetcher = (...args) => globalThis.fetch(...args), onProgress = () => {} } = {}) {
         Object.assign(this, { concurrency, timeoutMs, fetcher, onProgress });
         this.cache = new Map();
         this.queue = [];
