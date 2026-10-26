@@ -1,4 +1,5 @@
 import { formatFormula as doMath, orderedSounds } from "./export-utils.js";
+import { createArchiveBlob } from "./archive.js";
 import "./lib/jszip.min.js";
 import { TurndownService } from "./lib/turndown.js";
 import { TurndownPluginGfmService } from "./lib/turndown-plugin-gfm.js";
@@ -1274,7 +1275,28 @@ async function onePackFolder(path, folder) {
     }
 }
 
+let exporting = false;
+
 export async function exportMarkdown(from, zipname) {
+    if (exporting) {
+        ui.notifications.warn('An export is already running. Wait for it to finish.');
+        return false;
+    }
+    exporting = true;
+    try {
+        await runExport(from, zipname);
+        return true;
+    } catch (error) {
+        console.error(`${MODULE_NAME} | Export failed`, error);
+        ui.notifications.error(`Markdown export failed: ${error.message}`);
+        return false;
+    } finally {
+        exporting = false;
+        zip = undefined;
+    }
+}
+
+async function runExport(from, zipname) {
 
     clearTemplateCache();
 
@@ -1285,6 +1307,7 @@ export async function exportMarkdown(from, zipname) {
     export_traits               = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_EXPORT_TRAITS);
 
     let noteid = ui.notifications.info(`${MODULE_NAME}.ProgressNotification`, {permanent: true, localize: true})
+    try {
     // Wait for the notification to get drawn
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -1342,10 +1365,12 @@ export async function exportMarkdown(from, zipname) {
     } else
         await oneDocument(TOP_PATH, from);
 
-    let blob = await zip.generateAsync({ type: "blob" });
+    let blob = await createArchiveBlob(zip);
     await saveDataToFile(blob, `${validFilename(zipname)}.zip`);
+    } finally {
     // ui.notifications.remove does not exist in Foundry V10
     ui.notifications.remove?.(noteid);
+    }
 }
 
 function ziprawfilename(name, type) {

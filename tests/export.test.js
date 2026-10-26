@@ -30,6 +30,39 @@ test('damage formulas preserve dice, unresolved references, and malformed source
     assert.equal(formatFormula({}, '@item.level'), '@item.level');
 });
 
+test('export failure clears progress, prevents overlapping exports, and allows a successful retry', async () => {
+    const { exportMarkdown } = await import('../scripts/export-markdown.js');
+    const notices = [], downloads = [];
+    globalThis.game = { settings: { get: () => false } };
+    globalThis.ui = { notifications: {
+        info: () => 42,
+        remove: id => notices.push(['remove', id]),
+        error: message => notices.push(['error', message]),
+        warn: message => notices.push(['warn', message])
+    }};
+    globalThis.Folder = class {};
+    const folder = Object.assign(new Folder(), {
+        name: 'Test', contents: [], getSubfolders() { throw Error('Broken source folder'); }
+    });
+    const originalError = console.error;
+    console.error = () => {};
+    try {
+        const first = exportMarkdown(folder, 'test');
+        assert.equal(await exportMarkdown(folder, 'overlap'), false);
+        assert.equal(await first, false);
+        assert.ok(notices.some(([type, value]) => type === 'error' && value.includes('Broken source folder')));
+        assert.ok(notices.some(([type, value]) => type === 'remove' && value === 42));
+        assert.ok(notices.some(([type]) => type === 'warn'));
+        folder.getSubfolders = () => [];
+        globalThis.window.URL = URL;
+        globalThis.MouseEvent = class {};
+        globalThis.document = { createElement: () => ({ dispatchEvent() { downloads.push(this.download); } }) };
+        assert.equal(await exportMarkdown(folder, 'retry'), true);
+        assert.deepEqual(downloads, ['retry.zip']);
+        assert.equal(notices.filter(([type]) => type === 'remove').length, 2);
+    } finally { console.error = originalError; }
+});
+
 test('playlist uses public playbackOrder and skips missing sounds', () => {
     const sounds = new Map([['a', { name: 'A' }], ['b', { name: 'B' }]]);
     const playlist = { sounds, playbackOrder: ['b', 'missing', 'a'], get _playbackOrder() { throw Error('private'); } };

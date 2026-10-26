@@ -82,3 +82,28 @@ do not install the source module.json containing placeholders.
    fields to the versions actually tested, then review/merge and publish a release.
 
 Do not treat CI success or a valid ZIP as proof of live Forge compatibility.
+
+## Follow-up log: ZIP download failure
+
+The updated log from `Downloads/download.devtools` reaches ZIP creation and ends
+with JSZip's `Bug : can't construct the Blob.` The exact browser allocation error
+is hidden by JSZip's obsolete BlobBuilder fallback. Large archives are a plausible
+trigger, but the log does not prove the underlying cause.
+
+ZIP downloads now use compressed, streaming Uint8Array chunks as Blob parts,
+avoiding JSZip's single concatenated output buffer and its Blob conversion path.
+Regression tests unpack the resulting Blob, verify binary and asynchronous inputs,
+and exercise stream errors, browser Blob failure, progress cleanup, overlap prevention,
+and successful retry. Actual browser memory limits still apply to large exports.
+The exporter now shows failure details and clears its progress notice on failure.
+
+The accompanying browser Issues screenshot reports a PF2e stylesheet @property
+warning, form accessibility warnings and browser history behavior. These are not
+the fatal ZIP exception. Other log messages about unresolved links or tags in macro
+source do not establish that ZIP generation failed.
+
+Retest using the newest PR Actions artifact, not the earlier preview ZIP or the
+latest stable manifest (the PR has not been released). Start with one compendium,
+then repeat the export that failed. Record whether a ZIP is downloaded, opens and
+contains the expected documents and assets. If browser allocation still fails,
+export smaller folders/compendiums and capture the new, original error details.
