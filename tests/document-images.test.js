@@ -5,6 +5,17 @@ import { exportDocumentImages, imageArchivePath } from '../scripts/document-imag
 import { AssetDownloads } from '../scripts/assets.js';
 import { createArchiveBlob } from '../scripts/archive.js';
 
+test('registered PF2e module art overrides stale compendium placeholder images', () => {
+    const queued = [];
+    const portrait = 'modules/pf2e-tokens-bestiaries/portraits/humanoid/aasimar-redeemer.webp';
+    const token = 'modules/pf2e-tokens-bestiaries/tokens/aasimar-redeemer.webp';
+    const result = exportDocumentImages({img: 'systems/pf2e/icons/default-icons/npc.svg'}, true,
+        path => {queued.push(path); return imageArchivePath(path);}, () => {},
+        {img: portrait, prototypeToken: {texture: {src: token}}});
+    assert.deepEqual(queued, [portrait, token]);
+    assert.equal(result, token);
+});
+
 test('remote image paths extract on Windows and preserve local icon directories', () => {
     assert.equal(imageArchivePath('https://assets.forge-vtt.com/user/modules/art/icons/aasimar%20redeemer.webp'),
         'remote/assets.forge-vtt.com/user/modules/art/icons/aasimar redeemer.webp');

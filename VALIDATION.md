@@ -165,3 +165,17 @@ and verify both files, selected token links, setting-off behavior, duplicate sup
 placeholder fallback and wildcard warnings. Real Forge creature-image retesting remains
 outstanding. Start with Aasimar Redeemer and verify the portrait/token files and the
 statblock token link in the extracted archive.
+
+The user subsequently reported aasimar-redeemer.webp still missing. PF2e 8.6.1
+source (`src/module/actor/base.ts`, `_initializeSource`) normally merges the registered
+`game.pf2e.system.moduleArt.map` entry when constructing compendium actors. Export now
+also consults this map explicitly for compendium documents. A regression test covers
+mapped artwork replacing a stale default portrait. This is a defensive correction,
+not confirmation of the user's exact failure cause.
+
+Every export now includes export-images.json, recording each templated document's UUID,
+name, image setting, original portrait/token paths, registered module-art paths and
+selected statblock link. For a missing image, supply this report and export-warnings.json
+so we can distinguish disabled export, absent art mapping, fetch failure, and a creature
+not included in the selection. Aasimar Redeemer's UUID is
+Compendium.pf2e.pathfinder-bestiary.Actor.gDMPUL0UiOHrUUd3.

@@ -2,10 +2,12 @@
  * evidence that an image is a placeholder: custom modules also use icons/.
  * Return the token link used by the creature statblock, falling back to portrait.
  */
-export function exportDocumentImages(doc, enabled, addImage, warn = console.warn) {
+export function exportDocumentImages(doc, enabled, addImage, warn = console.warn, mappedArt) {
     if (!enabled) return undefined;
-    const portrait = typeof doc.img === 'string' ? doc.img : '';
-    const token = typeof doc.prototypeToken?.texture?.src === 'string' ? doc.prototypeToken.texture.src : '';
+    const portraitSource = mappedArt?.img ?? doc.img;
+    const tokenSource = mappedArt?.prototypeToken?.texture?.src ?? doc.prototypeToken?.texture?.src;
+    const portrait = typeof portraitSource === 'string' ? portraitSource : '';
+    const token = typeof tokenSource === 'string' ? tokenSource : '';
     const links = new Map();
     for (const path of new Set([portrait, token].filter(Boolean))) {
         if (path.includes('*')) {

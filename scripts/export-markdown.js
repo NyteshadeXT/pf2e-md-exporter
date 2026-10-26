@@ -22,6 +22,7 @@ const destForImages = "zz_asset-files";
 
 let zip;
 let assets;
+let imageReport = [];
 let reportProgress = () => {};
 
 
@@ -1137,12 +1138,17 @@ async function maybeTemplate(path, doc) {
 
     // Include both portrait and token artwork, including system and module icons.
     // Clear any link left by a previous export when image export is disabled.
+    const mappedArt = doc.pack ? game.pf2e?.system?.moduleArt?.map?.get(doc.uuid) : undefined;
     doc.img_path = exportDocumentImages(doc, export_tokens,
         image => fileconvert(image, " ", false),
         message => {
             console.warn(MODULE_NAME + ' | ' + message);
             ui.notifications.warn(message);
-        });
+        }, mappedArt);
+    imageReport.push({uuid: doc.uuid, name: doc.name, enabled: export_tokens,
+        portrait: doc.img, token: doc.prototypeToken?.texture?.src,
+        mappedPortrait: mappedArt?.img, mappedToken: mappedArt?.prototypeToken?.texture?.src,
+        selectedLink: doc.img_path ?? null});
 
     // Add extra property if initiative tracker option was selected
     if (include_initiative_tracker) {
@@ -1264,6 +1270,7 @@ export async function exportMarkdown(from, zipname) {
 async function runExport(from, zipname) {
 
     clearTemplateCache();
+    imageReport = [];
 
     use_uuid_for_journal_folder = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_FOLDER_AS_UUID);
     use_uuid_for_notename       = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_NOTENAME_IS_UUID);
@@ -1338,6 +1345,7 @@ async function runExport(from, zipname) {
     } else
         await oneDocument(TOP_PATH, from);
 
+    zip.file('export-images.json', JSON.stringify(imageReport, null, 2));
     reportProgress('Downloading assets: ' + assets.completed + '/' + assets.cache.size, true);
     assets.onProgress = state => reportProgress('Downloading assets: ' + state.completed + '/' + state.cache.size);
     await assets.finish();
