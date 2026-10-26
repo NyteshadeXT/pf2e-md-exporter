@@ -48,7 +48,7 @@ Hooks.once('ready', () => {
 
     game.settings.register(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_EXPORT_TOKENS, {
 		name: "Export custom images",
-		hint: "When checked, if any monster being exported contains a custom token reference, that image will also be included in the zip file. NOTE: this will NOT export system default tokens.",
+		hint: "Include portrait and token images in the ZIP, including system icons and module artwork. Creature statblocks use token artwork when available, otherwise the portrait. Wildcard image paths require a concrete file.",
 		scope: "world",
 		type:  Boolean,
 		default: false,

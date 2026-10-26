@@ -143,3 +143,25 @@ invokes globalThis.fetch on its owning global. A regression test requires that
 receiver and verifies downloaded bytes, covering the browser behavior missed by
 the earlier injected-fetch tests. Retest image inclusion with the next artifact;
 the previous successful archive contains placeholders for these failed assets.
+
+## Creature artwork inclusion
+
+The user supplied a successful HTTP 200 request for Aasimar Redeemer artwork under
+the Forge-hosted `modules/pf2e-tokens-bestiaries/portraits/humanoid/aasimar-redeemer.webp`
+path. That confirms artwork is available in the user's session; it does not prove
+that a bulk-compendium document exposes the same image or that export fetch succeeds.
+
+With Export custom images enabled, the exporter now queues both doc.img and
+prototypeToken.texture.src, deduplicates identical paths, and prefers concrete token
+artwork in statblocks, falling back to the portrait for placeholder/wildcard tokens.
+The broad systems/ and icons/ path exclusions have been removed. System placeholders
+can now be included too. Wildcards produce an explicit warning rather than requesting
+a literal asterisk path. Existing setting values remain in effect; enable it for retesting.
+
+Remote files now use extractable `zz_asset-files/remote/<host>/<path>` names and
+matching Markdown links, avoiding the old https: directory and doubled slash path.
+Tests download mocked bytes for system portrait and Forge token URLs, unpack the ZIP,
+and verify both files, selected token links, setting-off behavior, duplicate suppression,
+placeholder fallback and wildcard warnings. Real Forge creature-image retesting remains
+outstanding. Start with Aasimar Redeemer and verify the portrait/token files and the
+statblock token link in the extracted archive.

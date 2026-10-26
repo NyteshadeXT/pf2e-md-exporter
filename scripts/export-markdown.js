@@ -1,3 +1,4 @@
+import { exportDocumentImages, imageArchivePath } from "./document-images.js";
 import { AssetDownloads, withTimeout } from "./assets.js";
 import { formatFormula as doMath, orderedSounds } from "./export-utils.js";
 import { createArchiveBlob } from "./archive.js";
@@ -127,11 +128,11 @@ function formatLink(link, label=null, inline=false) {
 }
 
 function fileconvert(filename, label_or_size=null, inline=true) {
-    filename = decodeURIComponent(filename);
+    const archivePath = imageArchivePath(filename);
 
-    zip.folder(destForImages).file(filename, assets.get(filename), {binary: true});
+    zip.folder(destForImages).file(archivePath, assets.get(filename), {binary: true});
 
-    return formatLink(filename, label_or_size, inline);
+    return formatLink(archivePath, label_or_size, inline);
 }
 
 function replaceLinkedFile(str, label, filename) {
@@ -1134,17 +1135,14 @@ async function maybeTemplate(path, doc) {
     if (!templatePath) return documentToJSON(path, doc);
     //console.log(`Using handlebars template '${templatePath}' for '${doc.name}'`)
 
-    // Only upload non-system IMGs, if present.
-    // NOTE: please observe any license restrictions on images from
-    //       journal entries you do not directly own.  
-    //       See: data/systems/pf2e/licenses for PF2e artwork license information. 
-    //       This is why system images are excluded.
-    if (doc.img && export_tokens) {
-        if (! doc.img.includes("systems/") && ! doc.img.includes("icons/")) {
-            // Save the image to the zip file
-            doc.img_path = fileconvert(doc.img, " ", false);
-        }
-    }
+    // Include both portrait and token artwork, including system and module icons.
+    // Clear any link left by a previous export when image export is disabled.
+    doc.img_path = exportDocumentImages(doc, export_tokens,
+        image => fileconvert(image, " ", false),
+        message => {
+            console.warn(MODULE_NAME + ' | ' + message);
+            ui.notifications.warn(message);
+        });
 
     // Add extra property if initiative tracker option was selected
     if (include_initiative_tracker) {

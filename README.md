@@ -32,7 +32,9 @@ Choose `Configure Settings` and pick PF2E Exporter.
 
 _NOTE:_ It is recommended to **NOT** use the UUID of each document as the note name as doing so will populate your vault with a lot of random file names.
 
-- If you own any custom modules that supply monster artwork and you want that artwork to be included, you must enable such modules in your world, and select the option to "Export custom images".
+- To include creature artwork, enable its supplying modules in your world and select **Export custom images**. This includes portraits and concrete prototype-token images, including paths under `systems/` and `icons/`. Creature statblocks prefer token artwork and fall back to the portrait. Wildcard token paths require a concrete file and produce a warning when skipped.
+
+- Images are saved under `zz_asset-files`. Forge and other web-hosted images use `zz_asset-files/remote/<host>/<path>`, and their Markdown links use the matching archive path. Assets that cannot be downloaded appear in `export-warnings.json`.
 
 - If you want to include markdown for the monsters for Obsidian's [Initiative Tracker](https://github.com/javalent/initiative-tracker) plugin, choose "Include Initiative Tracker markdown".
 
