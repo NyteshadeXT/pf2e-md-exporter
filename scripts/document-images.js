@@ -1,11 +1,11 @@
-/** Queue portrait and concrete prototype-token images. Folder names are not
+/** Queue portraits and optionally concrete prototype-token images. Folder names are not
  * evidence that an image is a placeholder: custom modules also use icons/.
- * Return the token link used by the creature statblock, falling back to portrait.
+ * Return the portrait link by default, or token link when explicitly included.
  */
-export function exportDocumentImages(doc, enabled, addImage, warn = console.warn, mappedArt) {
+export function exportDocumentImages(doc, enabled, addImage, warn = console.warn, mappedArt, includeTokens = false) {
     if (!enabled) return undefined;
     const portraitSource = mappedArt?.img ?? doc.img;
-    const tokenSource = mappedArt?.prototypeToken?.texture?.src ?? doc.prototypeToken?.texture?.src;
+    const tokenSource = includeTokens ? mappedArt?.prototypeToken?.texture?.src ?? doc.prototypeToken?.texture?.src : '';
     const portrait = typeof portraitSource === 'string' ? portraitSource : '';
     const token = typeof tokenSource === 'string' ? tokenSource : '';
     const links = new Map();

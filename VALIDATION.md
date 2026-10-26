@@ -179,3 +179,21 @@ selected statblock link. For a missing image, supply this report and export-warn
 so we can distinguish disabled export, absent art mapping, fetch failure, and a creature
 not included in the selection. Aasimar Redeemer's UUID is
 Compendium.pf2e.pathfinder-bestiary.Actor.gDMPUL0UiOHrUUd3.
+
+## User-confirmed creature images; reduced export scope
+
+The user confirms creature-image export worked after enabling Export custom images.
+They request portraits without separate token artwork and exclusion of these groups:
+Active Tile Macros, JB2A Sequencer Macros, Macros, Michael Ghelfi Studios, PF2e Ranged
+Combat, PF2e Summons Assistant Actors/Items, PF2e Utility Buttons, PF2e Workbench,
+PSFX, Summons Assistant Macros and Tabletop RPG Music.
+
+Include token images now defaults off and creature statblocks use portraits. The
+new Excluded compendiums or folders setting defaults to the requested list and matches
+exact titles, package/collection IDs and parent folder names, case-insensitively.
+Excluded packs are skipped before getDocuments, conversion, and asset collection.
+This removes those packs' exported content; references inside retained documents are
+not rewritten or recursively pruned. Source art modules stay active and their portrait
+maps can still supply retained creatures. Tests verify every requested group, nested
+folders, preserved Bestiaries, portrait-only selection and no reads of excluded packs.
+Manual verification of the smaller export is still outstanding.

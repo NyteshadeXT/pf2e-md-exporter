@@ -32,7 +32,9 @@ Choose `Configure Settings` and pick PF2E Exporter.
 
 _NOTE:_ It is recommended to **NOT** use the UUID of each document as the note name as doing so will populate your vault with a lot of random file names.
 
-- To include creature artwork, enable its supplying modules in your world and select **Export custom images**. This includes portraits and concrete prototype-token images, including paths under `systems/` and `icons/`. Creature statblocks prefer token artwork and fall back to the portrait. Wildcard token paths require a concrete file and produce a warning when skipped.
+- To include creature artwork, enable its supplying modules in your world and select **Export custom images**. Portraits are included, including paths under `systems/` and `icons/`. Separate token artwork is off by default; enable **Include token images** only if wanted. Statblocks use the portrait unless token images are included. Wildcard image paths require a concrete file and produce a warning when skipped.
+
+- **Excluded compendiums or folders** skips the utility, macro, effect and music groups listed in the setting before loading their documents or downloading their assets. Edit the comma/newline-separated exact titles or folder names to customize; clear the field to include all groups. Matching a folder also skips its nested compendiums. Creature-art modules remain enabled so they can supply portraits for retained Bestiary entries.
 
 - Images are saved under `zz_asset-files`. Forge and other web-hosted images use `zz_asset-files/remote/<host>/<path>`, and their Markdown links use the matching archive path. Assets that cannot be downloaded appear in `export-warnings.json`.
 

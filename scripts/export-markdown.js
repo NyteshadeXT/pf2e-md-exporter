@@ -1,3 +1,4 @@
+import { excludedPack, DEFAULT_EXCLUSIONS } from "./export-policy.js";
 import { exportDocumentImages, imageArchivePath } from "./document-images.js";
 import { AssetDownloads, withTimeout } from "./assets.js";
 import { formatFormula as doMath, orderedSounds } from "./export-utils.js";
@@ -32,6 +33,8 @@ const IMG_SIZE = "150";
 let use_uuid_for_journal_folder=true;
 let use_uuid_for_notename=true;
 let export_tokens = false;
+let includeTokenImages = false;
+let excludedCompendiums = DEFAULT_EXCLUSIONS;
 let include_initiative_tracker = false;
 let export_traits = false;
 
@@ -1144,7 +1147,7 @@ async function maybeTemplate(path, doc) {
         message => {
             console.warn(MODULE_NAME + ' | ' + message);
             ui.notifications.warn(message);
-        }, mappedArt);
+        }, mappedArt, includeTokenImages);
     imageReport.push({uuid: doc.uuid, name: doc.name, enabled: export_tokens,
         portrait: doc.img, token: doc.prototypeToken?.texture?.src,
         mappedPortrait: mappedArt?.img, mappedToken: mappedArt?.prototypeToken?.texture?.src,
@@ -1223,6 +1226,10 @@ async function oneFolder(path, folder) {
 }
 
 async function onePack(path, pack) {
+    if (excludedPack(pack, excludedCompendiums)) {
+        reportProgress(`Skipping excluded compendium: ${pack.title}`, true);
+        return;
+    }
     let type = pack.metadata.type;
     reportProgress(`Loading compendium: ${pack.title}`, true);
     let subpath = formpath(path, validFilename(pack.title));
@@ -1275,6 +1282,8 @@ async function runExport(from, zipname) {
     use_uuid_for_journal_folder = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_FOLDER_AS_UUID);
     use_uuid_for_notename       = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_NOTENAME_IS_UUID);
     export_tokens               = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_EXPORT_TOKENS);
+    includeTokenImages = game.settings.get(MODULE_NAME, "includeTokenImages");
+    excludedCompendiums = game.settings.get(MODULE_NAME, "excludedCompendiums");
     include_initiative_tracker  = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_INCLUDE_INITIATIVE);
     export_traits               = game.settings.get(MOD_CONFIG.MODULE_NAME, MOD_CONFIG.OPTION_EXPORT_TRAITS);
 

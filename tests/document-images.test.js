@@ -11,7 +11,7 @@ test('registered PF2e module art overrides stale compendium placeholder images',
     const token = 'modules/pf2e-tokens-bestiaries/tokens/aasimar-redeemer.webp';
     const result = exportDocumentImages({img: 'systems/pf2e/icons/default-icons/npc.svg'}, true,
         path => {queued.push(path); return imageArchivePath(path);}, () => {},
-        {img: portrait, prototypeToken: {texture: {src: token}}});
+        {img: portrait, prototypeToken: {texture: {src: token}}}, true);
     assert.deepEqual(queued, [portrait, token]);
     assert.equal(result, token);
 });
@@ -31,7 +31,7 @@ test('creature portrait and separate token bytes are included even under system 
     const selected = exportDocumentImages({img: portrait, prototypeToken: {texture: {src: token}}}, true, path => {
         zip.folder('zz_asset-files').file(imageArchivePath(path), assets.get(path), {binary: true});
         return `[[${imageArchivePath(path)}]]`;
-    });
+    }, undefined, undefined, true);
     assert.equal(selected, `[[${imageArchivePath(token)}]]`);
     await assets.finish();
     const loaded = await globalThis.JSZip.loadAsync(await (await createArchiveBlob(zip)).arrayBuffer());
@@ -57,7 +57,7 @@ test('portrait is used for generic or wildcard tokens and wildcard skips are exp
     const doc = {img: 'modules/art/aasimar.webp', prototypeToken: {texture: {src: 'icons/svg/mystery-man.svg'}}};
     assert.equal(exportDocumentImages(doc, true, add), doc.img);
     doc.prototypeToken.texture.src = 'modules/art/aasimar-*.webp';
-    assert.equal(exportDocumentImages(doc, true, add, message => warnings.push(message)), doc.img);
+    assert.equal(exportDocumentImages(doc, true, add, message => warnings.push(message), undefined, true), doc.img);
     assert.equal(warnings.length, 1);
     assert.ok(!queued.includes(doc.prototypeToken.texture.src));
     assert.equal(exportDocumentImages({}, true, add), undefined);

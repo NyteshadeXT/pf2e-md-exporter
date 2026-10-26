@@ -71,6 +71,22 @@ test('playlist uses public playbackOrder and skips missing sounds', () => {
     assert.deepEqual(orderedSounds({ sounds: [sounds.get('a')], playbackOrder: [] }), [{ name: 'A' }]);
 });
 
+test('excluded compendium folders skip document loading before ZIP generation', async () => {
+    const { exportMarkdown } = await import('../scripts/export-markdown.js');
+    const { DEFAULT_EXCLUSIONS } = await import('../scripts/export-policy.js');
+    let loads = 0;
+    const root = Object.assign(new Folder(), {name: 'Root', type: 'Compendium', getSubfolders: () => []});
+    const pack = title => ({title, folder: root, metadata: {}, getDocuments: async () => {
+        if (title === 'Tabletop RPG Music') throw Error('excluded pack was loaded');
+        loads++; return [];
+    }});
+    globalThis.game = {settings: {get: (_module, key) => key === 'excludedCompendiums' ? DEFAULT_EXCLUSIONS : false},
+        packs: [pack('Tabletop RPG Music'), pack('Bestiaries')]};
+    globalThis.ui = {notifications: {info: () => 42, remove() {}, warn() {}, error(message) {throw Error(message);}}};
+    assert.equal(await exportMarkdown(root, 'filtered'), true);
+    assert.equal(loads, 1);
+});
+
 test('template fetch failures are explicit and can be retried', async () => {
     const original = globalThis.fetch;
     globalThis.Handlebars = { compile: text => () => text };
