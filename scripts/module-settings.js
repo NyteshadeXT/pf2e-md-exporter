@@ -140,6 +140,8 @@ Hooks.once('ready', () => {
         })
     }
     
+  Handlebars.registerHelper('me-isNumber', value => typeof value === 'number' && Number.isFinite(value));
+
   Handlebars.registerHelper('me-trait', function (value) {
     // Convert a sluggified trait into its localized human-readable text
     let lookUpText = CONFIG.PF2E.npcAttackTraits[value];

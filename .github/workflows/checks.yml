@@ -1,0 +1,23 @@
+name: Checks
+on:
+  pull_request:
+  push:
+    branches: [main, 'fix/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm test
+      - name: Check JavaScript syntax
+        run: find scripts tools tests -name '*.js' -o -name '*.mjs' | xargs -n 1 node --check
+      - run: npm run build -- v0.10.10-preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pf2e-md-exporter-preview
+          path: dist/

@@ -1,3 +1,4 @@
+import { formatFormula as doMath, orderedSounds } from "./export-utils.js";
 import "./lib/jszip.min.js";
 import { TurndownService } from "./lib/turndown.js";
 import { TurndownPluginGfmService } from "./lib/turndown-plugin-gfm.js";
@@ -527,93 +528,6 @@ function convertMarkdownLinks(markdown, relativeTo) {
     return markdown;
 }
 
-function stripUnbalancedLeftParen(input) {
-    // Check if the string starts with '(' and is unbalanced
-    if (input.startsWith('(') && input.split('(').length > input.split(')').length) {
-        return input.slice(1); // Remove the first character
-    }
-    return input; // Return the original string if no unbalanced '('
-}
-
-// Evaluate a math formula to turn it into a number.
-// This is designed to resolve things that reference ceil() or floor()
-// and an item or spell level, such as @Damage or @Template commands.
-/**
- * Performs mathematical calculations based on the given formula.
- * @param {Object} doc - The document object.
- * @param {string} formula - The mathematical formula to be evaluated.
- * @returns {number|string} - The result of the calculation or "MATH_ERROR" if an error occurs.
- */
-function doMath(doc, formula) {
-    formula = stripUnbalancedLeftParen(formula);
-    //console.log(`doMath: ${formula}`);
-
-    let result = ''; 
-
-    // Remove any outermost parens
-    formula = formula.replace(/^\((.*)\)$/, '$1');
-
-    // Replace any @item references with the item's level
-    // TODO: should I use Roll.replaceFormulaData() instead?
-    let level = doc.level;
-    formula = formula.replaceAll("(@item.level)", level);
-    formula = formula.replaceAll("@item.level", level);
-    formula = formula.replaceAll("(@item.rank)", level);
-    formula = formula.replaceAll("@item.rank", level);
-    formula = formula.replaceAll("(@item.badge.value)", 1);
-    formula = formula.replaceAll("@item.badge.value", 1);
-
-    // Replace any @actor references with 1 as that is how the
-    // feat descriptions that use this syntax are generally written.
-    formula = formula.replaceAll("(@actor.level)", 1);
-    formula = formula.replaceAll("@actor.level", 1);
-
-    // Remove any trailing "# comment text" or "|damage type"
-    formula = formula.split('#')[0].trim();
-    formula = formula.split('|')[0].trim();
-
-    //console.log("   Revised formula:", formula);
-
-    // Remove any outermost braces
-    formula = formula.replace(/^\{(.*)\}$/, '$1');
-
-    if (!formula.includes('d') && !formula.includes('D')) {
-        // No dice, so just evaluate the expression
-        result = Roll.safeEval(formula);
-    } else {
-        // There be dice in this expression - we need to do special parsing
-
-        // Get the formula preceding the `d`
-        let parts = formula.split(/[dD]/);
-        formula = parts[0];
-
-        // If we have no preceding number in front of the `d`, make it a 1.
-        if (formula == '') {
-            formula = '1';
-        }
-
-        // Wrap it in parens for easier Roll.safeEval() handling
-        if (!formula.startsWith('(')) {
-            formula = '(' + formula + ')';
-        } 
-
-        let rollTerms = Roll.parse(formula);
-        //console.log("Terms:", rollTerms);
-        for (let term of rollTerms) {
-            //console.log("term: ", term);
-            if (isNaN(Number(term))) {
-                 result = result + Roll.safeEval(term.formula);
-            } else {
-                result = result + term.formula;
-            }
-        }
-        result = result + 'd' + parts[1];
-    }
-
-    //console.log(`doMath: ${formula} = ${result}`);
-    return result;  
-}
-
 // Fix some weirdness with @damage rolls that have notation like (2[splash])[sonic]) where
 // the "splash" is redundant since it is also in the text description.
 function stripUnbalancedLeftBracket(input) {
@@ -629,7 +543,7 @@ function stripUnbalancedLeftBracket(input) {
     return input; // Return the original string if no unbalanced '[' is found
 }
 
-function convertPF2ETags(doc, html) {
+export function convertPF2ETags(doc, html) {
     // First, localize any @Localize tags - as these might end up containing links or other @tags, which need to get handled later.
     const localizePattern = /@(Localize)\[([^#\]]+)(?:#([^\]]+))?](?:{([^}]+)})?/g;
     let markdown = html.replace(localizePattern, expandOneLocalize);
@@ -742,7 +656,7 @@ function convertPF2ETags(doc, html) {
                                                     let result = doMath(doc, p1);
                                                     if (result) {
                                                         // Remove any wrapping parens
-                                                        result = `${result}`.replace(/^\(|\)$/g, "");
+                                                        result = String(result);
                                                     }
                                                     // If p2 has an @tag of the format "@xxx.flags.pf2e..."
                                                     // remove that part of the string.
@@ -788,7 +702,7 @@ function convertPF2ETags(doc, html) {
                                                     let result = doMath(doc, p1);
                                                     if (result) {
                                                         // Remove any wrapping parens
-                                                        result = `${result}`.replace(/^\(|\)$/g, "");
+                                                        result = String(result);
                                                     }
                                                     return result;
                                                 });
@@ -1184,7 +1098,7 @@ function onePlaylist(path, playlist) {
     // playlist.mode
     // playlist.name
     // playlist.seed
-    // playlist._playbackOrder (array, containing list of keys into playlist.sounds)
+    // playlist.playbackOrder (array, containing list of keys into playlist.sounds)
     // playlist.sounds (collection of PlaylistSound)
     //    - debounceVolume
     //    - description
@@ -1199,8 +1113,7 @@ function onePlaylist(path, playlist) {
 
     if (playlist.description) markdown += playlist.description + EOL + EOL;
 
-    for (const id of playlist._playbackOrder) {
-        const sound = playlist.sounds.get(id);
+    for (const sound of orderedSounds(playlist)) {
         // HOW to encode volume of each track?
         markdown += `#### ${sound.name}` + EOL;
         if (sound.description) markdown += sound.description + EOL

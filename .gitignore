@@ -1,2 +1,6 @@
 
 export-markdown.lock
+
+.reference-pf2e/
+dist/
+node_modules/

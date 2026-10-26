@@ -1,0 +1,10 @@
+{
+  "name": "pf2e-md-exporter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build": "node tools/package.mjs"
+  },
+  "engines": { "node": ">=22" }
+}

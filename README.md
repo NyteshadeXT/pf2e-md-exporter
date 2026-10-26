@@ -15,7 +15,7 @@ This process requires you have a Foundry account with a World with the **Pathfin
 ![Game System](Screenshots/GameSystem.png)
 
 ## 1. Install the following required modules:
-* **PF2E Exporter** (This is what you are reading right now. Use manifest `https://github.com/MostTornBrain/pf2e-md-exporter/releases/latest/download/module.json`)
+* **PF2E Exporter** (This is what you are reading right now. Use manifest `https://github.com/NyteshadeXT/pf2e-md-exporter/releases/latest/download/module.json`)
 * **More Handlebars Helpers**
 
 NOTE: You should be prompted to install the two extra required modules automatically when installing this module. 
